@@ -1,5 +1,6 @@
-
-// A general test program that uses a mix of operations over four ciphertexts.
+/*
+ * General test program that uses a mix of operations over four ciphertexts
+ */
 
 #include <NTL/ZZ.h>
 #include <NTL/BasicThreadPool.h>
@@ -27,15 +28,17 @@ exit(0); \
 
 /**************
  
- 1. c1.multiplyBy(c0)
- 2. c0 += random constant
- 3. c2 *= random constant
- 4. tmp = c1
- 5. ea.shift(tmp, random amount in [-nSlots/2, nSlots/2])
- 6. c2 += tmp
- 7. ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
- 8. c1.negate()
- 9. c3.multiplyBy(c2)
+ Operations:
+ 
+ 1.  c1.multiplyBy(c0)
+ 2.  c0 += random constant
+ 3.  c2 *= random constant
+ 4.  tmp = c1
+ 5.  ea.shift(tmp, random amount in [-nSlots/2, nSlots/2])
+ 6.  c2 += tmp
+ 7.  ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
+ 8.  c1.negate()
+ 9.  c3.multiplyBy(c2)
  10. c0 -= c3
  
  **************/
@@ -92,7 +95,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     FHESecKey secretKey(context);
     const FHEPubKey& publicKey = secretKey;
-    secretKey.GenSecKey(w); // A Hamming-weight-w secret key
+    secretKey.GenSecKey(w); 	  // A Hamming-weight-w secret key
     addSome1DMatrices(secretKey); // compute key-switching matrices that we need
     
     EncryptedArray ea(context, G); // https://shaih.github.io/HElib/class_encrypted_array.html
@@ -122,7 +125,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     for (long i = 0; i < R; i++)
     {
         
-        if (!noPrint) std::cout << "*** round " << i << "..."<<endl;
+        if (!noPrint)
+        	std::cout << "*** round " << i << "..."<<endl;
         
         long shamt = RandomBnd(2*(nslots/2) + 1) - (nslots/2);
         // random number in [-nslots/2..nslots/2]
@@ -143,7 +147,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
         mul(ea, p1, p0);     // c1.multiplyBy(c0)
         c1.multiplyBy(c0);
         
-    std:cout << c1 << endl;
+        std:cout << c1 << endl;
         
         if (!noPrint) CheckCtxt(c1, "c1*=c0");
         debugCompare(ea,secretKey,p1,c1);
@@ -201,7 +205,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     FHE_NTIMER_STOP(Circuit);
     
-    if (!noPrint) {
+    if (!noPrint)
+    {
         std::cout << endl;
         printAllTimers();
         std::cout << endl;
@@ -227,7 +232,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     FHE_NTIMER_STOP(Check);
     
     std::cout << endl;
-    if (!noPrint) {
+    if (!noPrint)
+    {
         printAllTimers();
         std::cout << endl;
     }
@@ -235,7 +241,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
 #if 0
     vector<Ctxt> vc(L,c0);            // A vector of L ciphertexts
     vector<NewPlaintextArray> vp(L, p0); // A vector of L plaintexts
-    for (long i=0; i<L; i++) {
+    for (long i=0; i<L; i++)
+    {
         vp[i].random();                     // choose a random plaintext
         ea.encrypt(vc[i], publicKey, vp[i]); // encrypt it
         if (i>0) vp[i].mul(vp[i-1]); // keep a running product of plaintexts
@@ -244,7 +251,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     // Check that the products match
     bool fail = false;
-    for (long i=0; i<L; i++) {
+    for (long i=0; i<L; i++)
+    {
         ea.decrypt(vc[i], secretKey, p0); // decrypt it
         if (!p0.equals(vp[i])) {
             fail = true;
@@ -276,6 +284,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
  *   ords    use specified vector of orders
  *              e.g., ords='[4 2 -4]', negative means 'bad'
  */
+ 
 int main(int argc, char **argv)
 {
     setTimersOn();
@@ -363,6 +372,7 @@ int main(int argc, char **argv)
         TestIt(R, p, r, d, c, k, w, L, m, gens, ords);
     }
 }
+
 
 // call to get our running test case:
 // Test_General_x p=23 m=20485 L=10 R=5
