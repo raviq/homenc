@@ -9,7 +9,7 @@ Write your program in a file `prog.cpp` and then run
 ```
 make prog_x
 ```
-which will compile `prog.cpp` and link in `fhe.a` and all required support libraries, and create the executable `prog_x`.
+which will compile `prog.cpp`, link in `fhe.a` and all required support libraries, and create the executable `prog_x`.
 
 ## Usage
 
