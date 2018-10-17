@@ -13,5 +13,5 @@ which will compile `prog.cpp`, link in `fhe.a` and all required support librarie
 ## Usage
 
 ```
-	bin/prog_x  R=1 k=10 p=2 r=2 noPrint=0
+bin/prog_x  R=1 k=10 p=2 r=2 noPrint=0
 ```
