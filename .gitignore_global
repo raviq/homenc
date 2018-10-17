@@ -1,0 +1,5 @@
+.gitattribute
+.gitignore
+.idea/*
+.DS_Store
+.gitignore_global
