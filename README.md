@@ -1,4 +1,3 @@
-
 # Homenc
 
 Homomorphic encryption using [HElib](https://shaih.github.io/HElib/index.html).
