@@ -1,5 +1,5 @@
 /*
- * General test program that uses a mix of operations over four ciphertexts
+ * General test program that uses a mix of operations over 4 ciphertexts.
  */
 
 #include <NTL/ZZ.h>
@@ -79,17 +79,15 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     else
         G = makeIrredPoly(p, d);
     
-    if (!noPrint) {
+    if (!noPrint) 
+    {
         context.zMStar.printout();
         std::cout << endl;
-        
-        std::cout << "security=" << context.securityLevel()<<endl;
-        std::cout << "# ctxt primes = " << context.ctxtPrimes.card() << "\n";
-        std::cout << "# bits in ctxt primes = "
-        << long(context.logOfProduct(context.ctxtPrimes)/log(2.0) + 0.5) << "\n";
-        std::cout << "# special primes = " << context.specialPrimes.card() << "\n";
-        std::cout << "# bits in special primes = "
-        << long(context.logOfProduct(context.specialPrimes)/log(2.0) + 0.5) << "\n";
+        std::cout << "Security =" << context.securityLevel()<<endl;
+        std::cout << "#  ctxt primes = " << context.ctxtPrimes.card() << "\n";
+        std::cout << "#  bits in ctxt primes = " << long(context.logOfProduct(context.ctxtPrimes)/log(2.0) + 0.5) << "\n";
+        std::cout << "#  special primes = " << context.specialPrimes.card() << "\n";
+        std::cout << "#  bits in special primes = " << long(context.logOfProduct(context.specialPrimes)/log(2.0) + 0.5) << "\n";
         std::cout << "G = " << G << "\n";
     }
     
@@ -149,17 +147,20 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
         
         std:cout << c1 << endl;
         
-        if (!noPrint) CheckCtxt(c1, "c1*=c0");
+        if (!noPrint)
+        	CheckCtxt(c1, "c1*=c0");
         debugCompare(ea,secretKey,p1,c1);
         
         add(ea, p0, const1); // c0 += random constant
         c0.addConstant(const1_poly);
-        if (!noPrint) CheckCtxt(c0, "c0+=k1");
+        if (!noPrint)
+        	CheckCtxt(c0, "c0+=k1");
         debugCompare(ea,secretKey,p0,c0);
         
         mul(ea, p2, const2); // c2 *= random constant
         c2.multByConstant(const2_poly);
-        if (!noPrint) CheckCtxt(c2, "c2*=k2");
+        if (!noPrint)
+        	CheckCtxt(c2, "c2*=k2");
         debugCompare(ea,secretKey,p2,c2);
         
         NewPlaintextArray tmp_p(p1); // tmp = c1
@@ -167,33 +168,39 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
         sprintf(buffer, "c2>>=%d", (int)shamt);
         shift(ea, tmp_p, shamt); // ea.shift(tmp, random amount in [-nSlots/2,nSlots/2])
         ea.shift(tmp, shamt);
-        if (!noPrint) CheckCtxt(tmp, buffer);
+        if (!noPrint)
+        	CheckCtxt(tmp, buffer);
         debugCompare(ea,secretKey,tmp_p,tmp);
         
         add(ea, p2, tmp_p);  // c2 += tmp
         c2 += tmp;
-        if (!noPrint) CheckCtxt(c2, "c2+=tmp");
+        if (!noPrint)
+        	CheckCtxt(c2, "c2+=tmp");
         debugCompare(ea,secretKey,p2,c2);
         
         sprintf(buffer, "c2>>>=%d", (int)rotamt);
         rotate(ea, p2, rotamt); // ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
         ea.rotate(c2, rotamt);
-        if (!noPrint) CheckCtxt(c2, buffer);
+        if (!noPrint)
+        	CheckCtxt(c2, buffer);
         debugCompare(ea,secretKey,p2,c2);
         
         ::negate(ea, p1); // c1.negate()
         c1.negate();
-        if (!noPrint) CheckCtxt(c1, "c1=-c1");
+        if (!noPrint)
+        	CheckCtxt(c1, "c1=-c1");
         debugCompare(ea,secretKey,p1,c1);
         
         mul(ea, p3, p2); // c3.multiplyBy(c2)
         c3.multiplyBy(c2);
-        if (!noPrint) CheckCtxt(c3, "c3*=c2");
+        if (!noPrint)
+        	CheckCtxt(c3, "c3*=c2");
         debugCompare(ea,secretKey,p3,c3);
         
         sub(ea, p0, p3); // c0 -= c3
         c0 -= c3;
-        if (!noPrint) CheckCtxt(c0, "c0=-c3");
+        if (!noPrint)
+        	CheckCtxt(c0, "c0=-c3");
         debugCompare(ea,secretKey,p0,c0);
         
     }
@@ -239,13 +246,14 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     }
     
 #if 0
-    vector<Ctxt> vc(L,c0);            // A vector of L ciphertexts
+    vector<Ctxt> vc(L,c0);           	 // A vector of L ciphertexts
     vector<NewPlaintextArray> vp(L, p0); // A vector of L plaintexts
     for (long i=0; i<L; i++)
     {
-        vp[i].random();                     // choose a random plaintext
-        ea.encrypt(vc[i], publicKey, vp[i]); // encrypt it
-        if (i>0) vp[i].mul(vp[i-1]); // keep a running product of plaintexts
+        vp[i].random();                  	   // choose a random plaintext
+        ea.encrypt(vc[i], publicKey, vp[i]);   // encrypt it
+        if (i>0) 
+        	vp[i].mul(vp[i-1]); 		  	   // keep a running product of plaintexts
     }
     incrementalProduct(vc); // Compute the same running product homomorphically
     
@@ -254,7 +262,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     for (long i=0; i<L; i++)
     {
         ea.decrypt(vc[i], secretKey, p0); // decrypt it
-        if (!p0.equals(vp[i])) {
+        if (!p0.equals(vp[i])) 
+        {
             fail = true;
             std::cout << "incrementalProduct oops "<<i<< endl;
         }
@@ -264,7 +273,8 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
 }
 
 
-/* A general test program that uses a mix of operations over four ciphertexts.
+/**********************************************************************************
+ * A general test program that uses a mix of operations over four ciphertexts.
  * Usage: Test_General_x [ name=value ]...
  *   R       number of rounds  [ default=1 ]
  *   p       plaintext base  [ default=2 ]
@@ -283,7 +293,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
  *              e.g., gens='[562 1871 751]'
  *   ords    use specified vector of orders
  *              e.g., ords='[4 2 -4]', negative means 'bad'
- */
+ **********************************************************************************/
  
 int main(int argc, char **argv)
 {
@@ -350,10 +360,12 @@ int main(int argc, char **argv)
     SetSeed(ZZ(seed));
     SetNumThreads(nt);
     
-    if (L==0) { // determine L based on R,r
-        L = 3*R+3;
-        if (p>2 || r>1) { // add some more primes for each round
-            long addPerRound = 2*ceil(log((double)p)*r*3)/(log(2.0)*FHE_p2Size) +1;
+    if (L == 0) // determine L based on R,r
+    { 
+        L = 3*R + 3;
+        if (p>2 || r>1)  // add some more primes for each round
+        {
+            long addPerRound = 2 * ceil(log((double)p)*r*3)/(log(2.0)*FHE_p2Size) + 1;
             L += R * addPerRound;
         }
     }
