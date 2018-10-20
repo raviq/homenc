@@ -20,53 +20,37 @@
 #include <NTL/ZZ.h>
 #include <NTL/BasicThreadPool.h>
 #include <NTL/lzz_pXFactoring.h>
-
 #include <cassert>
 #include <cstdio>
 #include <stdlib.h>
-
 #include "FHE.h"
 #include "timing.h"
 #include "EncryptedArray.h"
 
 static bool PRINT = true;
 
-
-void compare(	EncryptedArray ea, 
-				FHESecKey sk, 		// secret key
-				NewPlaintextArray p, 
-				Ctxt c)
+void compare(EncryptedArray ea, FHESecKey sk, NewPlaintextArray p, Ctxt c)
 {
-		NewPlaintextArray pp(ea);
-		ea.decrypt(c, sk, pp);
+	NewPlaintextArray pp(ea);
+	ea.decrypt(c, sk, pp);
 
-		if (!equals(ea, pp, p))
-		{
-			std::cout << "Oops:\n";
-			std::cout << p << "\n";
-			std::cout << pp << "\n";
-			exit(0);
-		}
-		else
-		{
-			std::cout << "Equal:\n";
-			std::cout << p << "\n\n";
-			std::cout << pp << "\n";
-		}
+	if (!equals(ea, pp, p))
+	{
+		std::cout << "Oops:\n";
+		std::cout << p << "\n";
+		std::cout << pp << "\n";
+		exit(0);
+	}
+	else
+	{
+		std::cout << "Equal:\n";
+		std::cout << p << "\n\n";
+		std::cout << pp << "\n";
+	}
 }
 
 //----------------------------------------------------------------------------------------------------
-void  TestIt(	long R, 
-				long p, 
-				long r, 
-				long d, 
-				long c, 
-				long k, 
-				long w, 
-				long L, 
-				long m, 
-				const Vec<long>& gens, 
-				const Vec<long>& ords)
+void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, long m, const Vec<long>& gens, const Vec<long>& ords)
 {
     char buffer[32];
     
@@ -177,7 +161,6 @@ void  TestIt(	long R,
         std::cout << "c1.isEmpty() ?      " << c1.isEmpty() << endl;
         std::cout << "inCanonicalForm() ? " << c1.inCanonicalForm() << endl;
         std::cout << "isCorrect() ?       " << c1.isCorrect() << endl;
-
         
         if (PRINT)
         	CheckCtxt(c1, "c1 *= c0");
