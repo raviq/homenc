@@ -1,6 +1,21 @@
-/*
- * General test program that uses a mix of operations over 4 ciphertexts.
- */
+//------------------------------------------------------------------------
+//
+// General test program that uses a mix of operations over 4 ciphertexts.
+//
+// Operations:
+//  
+//  	1.  c1.multiplyBy(c0)
+//  	2.  c0 += random constant
+//  	3.  c2 *= random constant
+// 	 	4.  tmp = c1
+// 		5.  ea.shift(tmp, random amount in [-nSlots/2, nSlots/2])
+// 		6.  c2 += tmp
+//  	7.  ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
+//  	8.  c1.negate()
+//  	9.  c3.multiplyBy(c2)
+//  	10. c0 -= c3
+//
+//------------------------------------------------------------------------
 
 #include <NTL/ZZ.h>
 #include <NTL/BasicThreadPool.h>
@@ -8,50 +23,56 @@
 
 #include <cassert>
 #include <cstdio>
+#include <stdlib.h>
 
 #include "FHE.h"
 #include "timing.h"
 #include "EncryptedArray.h"
 
-#ifdef DEBUG_PRINTOUT
-#define debugCompare(ea,sk,p,c) {\
-NewPlaintextArray pp(ea);\
-ea.decrypt(c, sk, pp);\
-if (!equals(ea, pp, p)) { \
-std::cout << "oops:\n"; std::cout << p << "\n"; \
-std::cout << pp << "\n"; \
-exit(0); \
-}}
-#else
-#define debugCompare(ea,sk,p,c)
-#endif
+static bool PRINT = true;
 
-/**************
- 
- Operations:
- 
- 1.  c1.multiplyBy(c0)
- 2.  c0 += random constant
- 3.  c2 *= random constant
- 4.  tmp = c1
- 5.  ea.shift(tmp, random amount in [-nSlots/2, nSlots/2])
- 6.  c2 += tmp
- 7.  ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
- 8.  c1.negate()
- 9.  c3.multiplyBy(c2)
- 10. c0 -= c3
- 
- **************/
 
-static bool noPrint = true;
+void compare(	EncryptedArray ea, 
+				FHESecKey sk, 		// secret key
+				NewPlaintextArray p, 
+				Ctxt c)
+{
+		NewPlaintextArray pp(ea);
+		ea.decrypt(c, sk, pp);
 
-void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, long m, const Vec<long>& gens, const Vec<long>& ords)
+		if (!equals(ea, pp, p))
+		{
+			std::cout << "Oops:\n";
+			std::cout << p << "\n";
+			std::cout << pp << "\n";
+			exit(0);
+		}
+		else
+		{
+			std::cout << "Equal:\n";
+			std::cout << p << "\n\n";
+			std::cout << pp << "\n";
+		}
+}
+
+//----------------------------------------------------------------------------------------------------
+void  TestIt(	long R, 
+				long p, 
+				long r, 
+				long d, 
+				long c, 
+				long k, 
+				long w, 
+				long L, 
+				long m, 
+				const Vec<long>& gens, 
+				const Vec<long>& ords)
 {
     char buffer[32];
     
-    if (!noPrint)
+    if (PRINT)
     {
-        std::cout << "\n\n******** TestIt" << (isDryRun()? "(dry run):" : ":");
+        std::cout << "\n\n ### TestIt" << (isDryRun()? "(dry run):" : ":");
         std::cout << " R=" << R
         << ", p=" << p
         << ", r=" << r
@@ -79,7 +100,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     else
         G = makeIrredPoly(p, d);
     
-    if (!noPrint) 
+    if (PRINT) 
     {
         context.zMStar.printout();
         std::cout << endl;
@@ -109,7 +130,15 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     random(ea, p2);
     random(ea, p3);
     
-    Ctxt c0(publicKey), c1(publicKey), c2(publicKey), c3(publicKey);
+    // A Ctxt object holds a single cipehrtext.
+    // The class Ctxt includes a vector<CtxtPart>: 
+    // For a Ctxt c, c[i] is the i'th ciphertext part, which can be used also as a DoubleCRT object (since CtxtPart is derived from DoubleCRT)
+    // Ref: https://shaih.github.io/HElib/class_ctxt.html#details
+    Ctxt c0(publicKey),
+    	 c1(publicKey),    
+    	 c2(publicKey), 
+    	 c3(publicKey);
+
     ea.encrypt(c0, publicKey, p0);
     // {ZZX ppp0; ea.encode(ppp0, p0); c0.DummyEncrypt(ppp0);} // dummy encryption
     ea.encrypt(c1, publicKey, p1); // real encryption
@@ -120,19 +149,19 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     FHE_NTIMER_START(Circuit);
     
-    for (long i = 0; i < R; i++)
+    for (long i = 0 ; i < R ; i++)
     {
         
-        if (!noPrint)
-        	std::cout << "*** round " << i << "..."<<endl;
+        if (PRINT)
+        	std::cout << "Round " << i << "..." <<endl;
         
         long shamt = RandomBnd(2*(nslots/2) + 1) - (nslots/2);
-        // random number in [-nslots/2..nslots/2]
+        // Random number in [-nslots/2..nslots/2]
         
         long rotamt = RandomBnd(2*nslots - 1) - (nslots - 1);
-        // random number in [-(nslots-1)..nslots-1]
+        // Random number in [-(nslots-1)..nslots-1]
         
-        // two random constants
+        // Two random constants
         NewPlaintextArray const1(ea);
         NewPlaintextArray const2(ea);
         random(ea, const1);
@@ -144,64 +173,67 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
         
         mul(ea, p1, p0);     // c1.multiplyBy(c0)
         c1.multiplyBy(c0);
+    
+        std::cout << "c1.isEmpty() ?      " << c1.isEmpty() << endl;
+        std::cout << "inCanonicalForm() ? " << c1.inCanonicalForm() << endl;
+        std::cout << "isCorrect() ?       " << c1.isCorrect() << endl;
+
         
-        std:cout << c1 << endl;
-        
-        if (!noPrint)
-        	CheckCtxt(c1, "c1*=c0");
-        debugCompare(ea,secretKey,p1,c1);
+        if (PRINT)
+        	CheckCtxt(c1, "c1 *= c0");
+        compare(ea, secretKey, p1, c1);
         
         add(ea, p0, const1); // c0 += random constant
         c0.addConstant(const1_poly);
-        if (!noPrint)
-        	CheckCtxt(c0, "c0+=k1");
-        debugCompare(ea,secretKey,p0,c0);
+        if (PRINT)
+        	CheckCtxt(c0, "c0 += k1");
+        compare(ea,secretKey,p0,c0);
         
         mul(ea, p2, const2); // c2 *= random constant
         c2.multByConstant(const2_poly);
-        if (!noPrint)
-        	CheckCtxt(c2, "c2*=k2");
-        debugCompare(ea,secretKey,p2,c2);
+        if (PRINT)
+        	CheckCtxt(c2, "c2 *= k2");
+        compare(ea,secretKey,p2,c2);
         
         NewPlaintextArray tmp_p(p1); // tmp = c1
         Ctxt tmp(c1);
-        sprintf(buffer, "c2>>=%d", (int)shamt);
+        sprintf(buffer, "c2 >>= %d", (int)shamt);
         shift(ea, tmp_p, shamt); // ea.shift(tmp, random amount in [-nSlots/2,nSlots/2])
         ea.shift(tmp, shamt);
-        if (!noPrint)
+        if (PRINT)
         	CheckCtxt(tmp, buffer);
-        debugCompare(ea,secretKey,tmp_p,tmp);
+        compare(ea,secretKey,tmp_p,tmp);
         
         add(ea, p2, tmp_p);  // c2 += tmp
         c2 += tmp;
-        if (!noPrint)
-        	CheckCtxt(c2, "c2+=tmp");
-        debugCompare(ea,secretKey,p2,c2);
+        if (PRINT)
+        	CheckCtxt(c2, "c2 += tmp");
+        compare(ea,secretKey,p2,c2);
         
-        sprintf(buffer, "c2>>>=%d", (int)rotamt);
+        sprintf(buffer, "c2 >>>= %d", (int)rotamt);
         rotate(ea, p2, rotamt); // ea.rotate(c2, random amount in [1-nSlots, nSlots-1])
         ea.rotate(c2, rotamt);
-        if (!noPrint)
+        if (PRINT)
         	CheckCtxt(c2, buffer);
-        debugCompare(ea,secretKey,p2,c2);
+        compare(ea,secretKey,p2,c2);
         
         ::negate(ea, p1); // c1.negate()
         c1.negate();
-        if (!noPrint)
-        	CheckCtxt(c1, "c1=-c1");
-        debugCompare(ea,secretKey,p1,c1);
+        if (PRINT)
+        	CheckCtxt(c1, "c1 =- c1");
+        compare(ea,secretKey,p1,c1);
         
         mul(ea, p3, p2); // c3.multiplyBy(c2)
         c3.multiplyBy(c2);
-        if (!noPrint)
-        	CheckCtxt(c3, "c3*=c2");
-        debugCompare(ea,secretKey,p3,c3);
+        if (PRINT)
+        	CheckCtxt(c3, "c3 *= c2");
+        compare(ea,secretKey,p3,c3);
         
         sub(ea, p0, p3); // c0 -= c3
         c0 -= c3;
-        if (!noPrint)
-        	CheckCtxt(c0, "c0=-c3");
-        debugCompare(ea,secretKey,p0,c0);
+        if (PRINT)
+        	CheckCtxt(c0, "c0 =- c3");
+        compare(ea,secretKey,p0,c0);
         
     }
     
@@ -212,7 +244,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     FHE_NTIMER_STOP(Circuit);
     
-    if (!noPrint)
+    if (PRINT)
     {
         std::cout << endl;
         printAllTimers();
@@ -232,14 +264,14 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     ea.decrypt(c3, secretKey, pp3);
     
     if (equals(ea, pp0, p0) && equals(ea, pp1, p1) && equals(ea, pp2, p2) && equals(ea, pp3, p3))
-        std::cout << "GOOD\n";
+        std::cout << "GOOD.\n";
     else
-        std::cout << "BAD\n";
+        std::cout << "BAD.\n";
     
     FHE_NTIMER_STOP(Check);
     
     std::cout << endl;
-    if (!noPrint)
+    if (PRINT)
     {
         printAllTimers();
         std::cout << endl;
@@ -273,27 +305,27 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
 }
 
 
-/**********************************************************************************
- * A general test program that uses a mix of operations over four ciphertexts.
- * Usage: Test_General_x [ name=value ]...
- *   R       number of rounds  [ default=1 ]
- *   p       plaintext base  [ default=2 ]
- *   r       lifting  [ default=1 ]
- *   d       degree of the field extension  [ default=1 ]
- *              d == 0 => factors[0] defines extension
- *   c       number of columns in the key-switching matrices  [ default=2 ]
- *   k       security parameter  [ default=80 ]
- *   L       # of levels in the modulus chain  [ default=heuristic ]
- *   s       minimum number of slots  [ default=0 ]
- *   repeat  number of times to repeat the test  [ default=1 ]
- *   m       use specified value as modulus
- *   mvec    use product of the integers as  modulus
- *              e.g., mvec='[5 3 187]' (this overwrite the m argument)
- *   gens    use specified vector of generators
- *              e.g., gens='[562 1871 751]'
- *   ords    use specified vector of orders
- *              e.g., ords='[4 2 -4]', negative means 'bad'
- **********************************************************************************/
+//----------------------------------------------------------------------------------
+//   A general test program that uses a mix of operations over four ciphertexts.
+//   Usage: Test_General_x [ name=value ]...
+//     R       number of rounds  [ default=1 ]
+//     p       plaintext base  [ default=2 ]
+//     r       lifting  [ default=1 ]
+//     d       degree of the field extension  [ default=1 ]
+//                d == 0 => factors[0] defines extension
+//     c       number of columns in the key-switching matrices  [ default=2 ]
+//     k       security parameter  [ default=80 ]
+//     L       # of levels in the modulus chain  [ default=heuristic ]
+//     s       minimum number of slots  [ default=0 ]
+//     repeat  number of times to repeat the test  [ default=1 ]
+//     m       use specified value as modulus
+//     mvec    use product of the integers as  modulus
+//                e.g., mvec='[5 3 187]' (this overwrite the m argument)
+//     gens    use specified vector of generators
+//                e.g., gens='[562 1871 751]'
+//     ords    use specified vector of orders
+//                e.g., ords='[4 2 -4]', negative means 'bad'
+//----------------------------------------------------------------------------------
  
 int main(int argc, char **argv)
 {
@@ -353,7 +385,7 @@ int main(int argc, char **argv)
     long nt=1;
     amap.arg("nt", nt, "num threads");
     
-    amap.arg("noPrint", noPrint, "suppress printouts");
+    amap.arg("PRINT", PRINT, "suppress printouts");
     
     amap.parse(argc, argv);
     
@@ -362,8 +394,8 @@ int main(int argc, char **argv)
     
     if (L == 0) // determine L based on R,r
     { 
-        L = 3*R + 3;
-        if (p>2 || r>1)  // add some more primes for each round
+        L = 3 * R + 3;
+        if ( p>2 || r>1 )  // add some more primes for each round
         {
             long addPerRound = 2 * ceil(log((double)p)*r*3)/(log(2.0)*FHE_p2Size) + 1;
             L += R * addPerRound;
@@ -376,7 +408,7 @@ int main(int argc, char **argv)
     if (mvec.length()>0)
         chosen_m = computeProd(mvec);
     std::cout << argv[0] << ": ";
-    long m = FindM(k, L, c, p, d, s, chosen_m, !noPrint);
+    long m = FindM(k, L, c, p, d, s, chosen_m, PRINT);
     
     setDryRun(dry);
     for (long repeat_cnt = 0; repeat_cnt < repeat; repeat_cnt++)
@@ -385,10 +417,11 @@ int main(int argc, char **argv)
     }
 }
 
-
+//----------------------------------------------------------------------------------
 // call to get our running test case:
 // Test_General_x p=23 m=20485 L=10 R=5
 //
 // another call to get an example where phi(m) is very
 // close to m:
 // Test_General_x m=18631 L=10 R=5
+//----------------------------------------------------------------------------------
