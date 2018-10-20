@@ -56,18 +56,18 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     
     if (PRINT)
     {
-        std::cout << "\n\n ### TestIt" << (isDryRun()? "(dry run):" : ":");
+        std::cout << "\n\n ### TestIt" << (isDryRun()? " (dry run): " : ": ");
         std::cout << " R=" << R
-        << ", p=" << p
-        << ", r=" << r
-        << ", d=" << d
-        << ", c=" << c
-        << ", k=" << k
-        << ", w=" << w
-        << ", L=" << L
-        << ", m=" << m
-        << ", gens=" << gens
-        << ", ords=" << ords
+        << ", p = " << p
+        << ", r = " << r
+        << ", d = " << d
+        << ", c = " << c
+        << ", k = " << k
+        << ", w = " << w
+        << ", L = " << L
+        << ", m = " << m
+        << ", gens = " << gens
+        << ", ords = " << ords
         << endl;
     }
     
