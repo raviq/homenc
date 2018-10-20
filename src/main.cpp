@@ -78,13 +78,9 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     FHEcontext context(m, p, r, gens1, ords1);
     buildModChain(context, L, c);
     
-    ZZX G;
-    if (d == 0)
-        G = context.alMod.getFactorsOverZZ()[0];
-    else
-        G = makeIrredPoly(p, d);
+    ZZX G = (d == 0) ? context.alMod.getFactorsOverZZ()[0] : makeIrredPoly(p, d);
     
-    if (PRINT) 
+    if (PRINT)
     {
         context.zMStar.printout();
         std::cout << endl;
@@ -118,6 +114,7 @@ void  TestIt(long R, long p, long r, long d, long c, long k, long w, long L, lon
     // The class Ctxt includes a vector<CtxtPart>: 
     // For a Ctxt c, c[i] is the i'th ciphertext part, which can be used also as a DoubleCRT object (since CtxtPart is derived from DoubleCRT)
     // Ref: https://shaih.github.io/HElib/class_ctxt.html#details
+   
     Ctxt c0(publicKey),
     	 c1(publicKey),    
     	 c2(publicKey), 
